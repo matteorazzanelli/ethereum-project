@@ -2,3 +2,4 @@
 .secret
 .deps/*
 startup_token/node_modules/*
+myvenv/*
