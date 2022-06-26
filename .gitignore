@@ -3,3 +3,4 @@
 .deps/*
 startup_token/node_modules/*
 myvenv/*
+startup_token/build/*
