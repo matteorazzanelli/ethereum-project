@@ -1,6 +1,6 @@
 var HDWalletProvider = require("truffle-hdwallet-provider");
 const fs = require('fs');
-const mnemonic = fs.readFileSync(".secret").toString().trim();
+const mnemonic = fs.readFileSync("../.secret").toString().trim();
 
 module.exports = {
   networks: {
@@ -21,7 +21,7 @@ module.exports = {
 	// Configure your compilers
   compilers: {
     solc: {
-      version: "0.7.0", // A version or constraint - Ex. "^0.5.0"
+      version: "0.8.0", // A version or constraint - Ex. "^0.5.0"
     }
   }
 };
