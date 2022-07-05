@@ -9,6 +9,8 @@ pragma solidity ^0.8.0;
 
 import "./parents/ERC20.sol";
 import "./parents/SafeMath.sol";
+pragma experimental ABIEncoderV2;
+
 
 /**
  * @title Notary Token contract
@@ -114,10 +116,9 @@ contract NotaryContract is NotaryToken {
 
     uint actID = numContract_++;
 
-    TitleDeed memory c = TitleDeed (buyer, seller, description, amount, 0, deadline, false);
-    acts_[actID] = c;
+    acts_[actID] = TitleDeed (buyer, seller, description, amount, 0, deadline, false);
 
-    emit NewContractCreated(actID, c.buyer, c.seller, c.amount);
+    emit NewContractCreated(actID, acts_[actID].buyer, acts_[actID].seller, acts_[actID].amount);
   }
 
   // Contribute in an act of sale
@@ -166,6 +167,15 @@ contract NotaryContract is NotaryToken {
     payable(msg.sender).transfer(amountFunded);
 
     emit ActFailed(actID, block.timestamp, amountFunded);
+  }
+
+  function getBuyer(uint actID) external view returns (address payable) {
+    return acts_[actID].buyer;
+  }
+
+  // We have to create our own getter
+  function getTitleDeed(uint actID) public view returns (TitleDeed memory) {
+    return acts_[actID];
   }
 
   // Fallback function: accept any incoming amount
