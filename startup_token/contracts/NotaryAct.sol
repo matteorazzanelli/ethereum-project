@@ -50,10 +50,12 @@ contract NotaryToken is ERC20 {
   } 
 
   // Add a new client
-  function addUser(address user) public onlyOwner {
-    users_[user] = true;
-    _mint(user, 1); // mint a token when adding user
-    emit UserAdded(user);
+  function addUser(address user) public {
+    if(!users_[user]){ // add only once
+      users_[user] = true;
+      _mint(user, 1); // mint a token when adding user
+      emit UserAdded(user);
+    }
   }
 
   // Remove a client
@@ -95,15 +97,19 @@ contract NotaryContract is NotaryToken {
   // Events
   event NewContractCreated(uint indexed actID, address indexed buyer, address indexed seller, uint amount);
   event NewContribution(uint indexed actID, address indexed from, uint indexed amount);
-  event GoalReached(uint indexed actID, uint indexed timestamp);
+  event GoalReached(uint indexed actID, uint indexed timestamp, uint amount);
   event ActFailed(uint indexed actID, uint indexed timestamp, uint amount);
   event GeneralDeposit(address indexed from, uint amount);
+
+  event Balances(address indexed from, uint amount);
 
   // Constructor
   constructor () NotaryToken () {}
 
   // Add a new contract
-  function newContract(address payable buyer, address payable seller, string memory description, uint amount, uint deadline) external {
+  function newContract(address payable buyer, address payable seller, 
+    string memory description, uint amount, uint deadline) public {
+
     // Initial check
     require(buyer != address(0), "Zero address entered for the buyer!");
     require(seller != address(0), "Zero address entered for the seller!");
@@ -122,30 +128,31 @@ contract NotaryContract is NotaryToken {
   }
 
   // Contribute in an act of sale
-  function newPayment(uint actID) external payable {
+  function newPayment(uint actID) public payable {
     require(acts_[actID].completed == false, "Contract has been already completed!");
     require(acts_[actID].amount > 0, "ActID is not correct!");
     require(acts_[actID].deadline > block.timestamp, "Deadline has already been reached!");
     require(msg.value > 0, "Offer value has to be greater than zero");
 
-    acts_[actID].amount = acts_[actID].amount.add(msg.value);
+    acts_[actID].amount_for_now = acts_[actID].amount_for_now.add(msg.value);
 
     emit NewContribution(actID, msg.sender, msg.value);
 
     // Reward contributor with tokens proportional to contribution
-    _mint(msg.sender, msg.value*1/10);
+    ERC20._mint(msg.sender, msg.value*1/10 wei);
 
     // Check if contract has been completed
     if(acts_[actID].amount <= acts_[actID].amount_for_now) {
       acts_[actID].completed = true;
-      acts_[actID].seller.transfer(acts_[actID].amount_for_now);
-      acts_[actID].amount = 0;
+      (bool success, ) = acts_[actID].seller.call{value: acts_[actID].amount_for_now}("");
+      require(success, "Transfer failed.");
+      acts_[actID].amount_for_now = 0;
 
       // Reward buyer with further NTT tokens
-      ERC20._mint(acts_[actID].buyer, 1000);
+      ERC20._mint(acts_[actID].buyer, 1000 wei);
 
       // Notify goal reached
-      emit GoalReached(actID, block.timestamp);
+      emit GoalReached(actID, block.timestamp, acts_[actID].amount_for_now);
     }
   }
 
@@ -156,21 +163,31 @@ contract NotaryContract is NotaryToken {
 
   // Refund policy
   function deletedNotaryAct(uint actID) public {
-    require(acts_[actID].amount > 0, "ID is not correct!");
-    require(block.timestamp > acts_[actID].deadline, "Contract is still in progress!");
     require(acts_[actID].completed == false, "Contract has been successfully completed!");
-    require(acts_[actID].buyer == msg.sender, "You have been already refunded or you are not a funder!");
 
     // For simplicity only the original buyer is refunded
-    uint amountFunded = acts_[actID].amount;
-    acts_[actID].amount = 0;
-    payable(msg.sender).transfer(amountFunded);
+    uint amountFunded = acts_[actID].amount_for_now;
+    // emit Balances(address(this), address(this).balance); // 50 wei
+    require(address(this).balance >= amountFunded,"Insufficient balance in faucet for withdrawal request");
+    acts_[actID].buyer.transfer(amountFunded); // this transfers to buyer.balance NOT token
+    // emit Balances(address(this), address(this).balance); // 0 wei
+    // emit Balances(address(this), ERC20.balanceOf(address(this))); // 0, the contract does not own token
+    // emit Balances(acts_[actID].buyer, acts_[actID].buyer.balance); // 100 ether
+    // emit Balances(acts_[actID].buyer, ERC20.balanceOf(acts_[actID].buyer)); // 1001 wei since no token sent
 
     emit ActFailed(actID, block.timestamp, amountFunded);
   }
 
   function getBuyer(uint actID) external view returns (address payable) {
     return acts_[actID].buyer;
+  }
+
+  function getSeller(uint actID) external view returns (address payable) {
+    return acts_[actID].seller;
+  }
+
+  function getDeadline(uint actID) external view returns (uint) {
+    return acts_[actID].deadline;
   }
 
   // We have to create our own getter
