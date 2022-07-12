@@ -1,6 +1,13 @@
 
 # Compile the contract
-import solcx
+# import solcx
+from solcx import compile_standard, install_solc
+
+# Compile our Solidity
+
+install_solc("0.6.0")
+
+print(compile_sol)
 # If you haven't already installed the Solidity compiler
 solcx.install_solc()
 # Compile
@@ -37,21 +44,3 @@ tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
 tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
 print(tx_receipt)
 print(tx_receipt['contractAddress'])
-
-########################################################################################
-
-
-##############################################################################################
-
-# Call contract function (this is not persisted to the blockchain)
-message = contract.functions.sayHello().call()
-
-print(message)
-
-# executes setPayload function
-tx_hash = contract.functions.setPayload('abc').transact()
-# waits for the specified transaction (tx_hash) to be confirmed
-# (included in a mined block)
-tx_receipt = web3.eth.waitForTransactionReceipt(tx_hash)
-print('tx_hash: {}'.format(tx_hash.hex()))
-
