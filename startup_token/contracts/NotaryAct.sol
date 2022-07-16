@@ -167,13 +167,9 @@ contract NotaryContract is NotaryToken {
 
     // For simplicity only the original buyer is refunded
     uint amountFunded = acts_[actID].amount_for_now;
-    // emit Balances(address(this), address(this).balance); // 50 wei
+
     require(address(this).balance >= amountFunded,"Insufficient balance in faucet for withdrawal request");
     acts_[actID].buyer.transfer(amountFunded); // this transfers to buyer.balance NOT token
-    // emit Balances(address(this), address(this).balance); // 0 wei
-    // emit Balances(address(this), ERC20.balanceOf(address(this))); // 0, the contract does not own token
-    // emit Balances(acts_[actID].buyer, acts_[actID].buyer.balance); // 100 ether
-    // emit Balances(acts_[actID].buyer, ERC20.balanceOf(acts_[actID].buyer)); // 1001 wei since no token sent
 
     emit ActFailed(actID, block.timestamp, amountFunded);
   }
