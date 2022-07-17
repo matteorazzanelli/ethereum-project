@@ -17,12 +17,12 @@ class NotaryModelForm(models.Model):
   id = models.FloatField()
   buyer = models.BinaryField(editable=True)
   seller = models.BinaryField(editable=True)
-  description = models.CharField()
+  description = models.CharField(max_length=500)
   amount = models.FloatField()
-  deadline = models.DateTimeField(auto_now_add=True)
+  deadline = models.IntegerField(editable=True)
   
-  status = models.CharField(choices=STATUS, default='pending')
-  type = models.CharField(choices=TYPE)
+  status = models.CharField(max_length=50, choices=STATUS, default='pending')
+  type = models.CharField(max_length=50, choices=TYPE)
   
 class Event(models.Model):
   _id = models.ObjectIdField()

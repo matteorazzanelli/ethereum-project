@@ -46,4 +46,4 @@ signed = w3.eth.account.sign_transaction(construct_txn,private_key)
 tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
 tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
 print(f"Done! Contract Deployed to {tx_receipt['contractAddress']} \n")
-# 0xDaa0db926b98FBB1De4752dA73cc8b6FAEDeBc5D
+# 0x95fF4E2BB700118Bf2042686b1235E0762f8194c

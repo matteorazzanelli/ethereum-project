@@ -2,15 +2,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-/// @title Crowdfunding platform
+/// @title Notary act platform
 /// @author Matteo Razzanelli
-/// @notice This contract was created for educational purpose, its reliability is not guaranteed
-/// @dev All functions calls are currently implemented without side effects
 
 import "./parents/ERC20.sol";
 import "./parents/SafeMath.sol";
 pragma experimental ABIEncoderV2;
-
 
 /**
  * @title Notary Token contract

@@ -22,7 +22,7 @@ acct = w3.eth.account.privateKeyToAccount(private_key)
 
 # retrieve contract vars and create contract instance
 import json
-deployed_contract_address = '0xDaa0db926b98FBB1De4752dA73cc8b6FAEDeBc5D'
+deployed_contract_address = '0x95fF4E2BB700118Bf2042686b1235E0762f8194c'
 compiled_contract_path = 'startup_token/build/contracts/NotaryContract.json'
 with open(compiled_contract_path) as file:
   contract_json = json.load(file)  # load contract info as JSON
@@ -33,6 +33,8 @@ contract = w3.eth.contract(address=deployed_contract_address, abi=contract_abi)
 
 #######################################################################################################################
 ################################# Create MongoDB initial setup
+
+from .models import Event
 
 # create mongodb records for each event
 events = ['NewContractCreated', 'NewContribution', 'GoalReached', 'ActFailed']
@@ -50,7 +52,6 @@ filters = [newContractFilter, newContributionFilter, goalReachedFilter, actFaile
 #######################################################################################################################
 
 
-from .models import Event
 from .forms import NotaryForm
 from django.shortcuts import  render, redirect
 from datetime import datetime
