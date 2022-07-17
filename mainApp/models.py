@@ -3,7 +3,7 @@ from djongo import models
 
 from djongo.models.fields import ObjectIdField
   
-class Event(models.Model):
+class NotaryModelForm(models.Model):
   _id = ObjectIdField()
   TYPE = [
     ('new', 'new'),
@@ -23,3 +23,9 @@ class Event(models.Model):
   
   status = models.CharField(choices=STATUS, default='pending')
   type = models.CharField(choices=TYPE)
+  
+class Event(models.Model):
+  _id = models.ObjectIdField()
+  type = models.CharField(max_length=50)
+  times = models.IntegerField(default=0)
+  date = models.DateTimeField(auto_now_add=True)

@@ -1,8 +1,8 @@
 from django import forms
-from .models import Event
+from .models import NotaryModelForm
 
 class NotaryForm(forms.ModelForm):
   class Meta:
-    model = Event
+    model = NotaryModelForm
     fields = ('id','type','buyer','seller','description','amount','deadine')
 

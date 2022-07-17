@@ -1,4 +1,5 @@
-# Fetch deployed conract
+#######################################################################################################################
+################################# Fetch deployed conract
 import sys, os
 from dotenv import load_dotenv
 load_dotenv()
@@ -30,203 +31,143 @@ with open(compiled_contract_path) as file:
 # Fetch deployed contract reference
 contract = w3.eth.contract(address=deployed_contract_address, abi=contract_abi)
 
+#######################################################################################################################
+################################# Create MongoDB initial setup
+
+# create mongodb records for each event
+events = ['NewContractCreated', 'NewContribution', 'GoalReached', 'ActFailed']
+for event in events:
+  record = Event.objects.create(type=event)
+  record.save()
+
+# set filters and counters for each event
+newContractFilter = contract.events.NewContractCreated.createFilter(fromBlock='0x0')
+newContributionFilter = contract.events.NewContribution.createFilter(fromBlock='0x0')
+goalReachedFilter = contract.events.GoalReached.createFilter(fromBlock='0x0')
+actFailedFilter = contract.events.ActFailed.createFilter(fromBlock='0x0')
+filters = [newContractFilter, newContributionFilter, goalReachedFilter, actFailedFilter]
 
 #######################################################################################################################
 
 
 from .models import Event
-from .forms import ActForm
+from .forms import NotaryForm
 from django.shortcuts import  render, redirect
+from datetime import datetime
+from django.contrib import messages
+import time
+from pprint import pprint
 
-# Create your views here.
+def process_new_contract(form, request):
+  # verify all params are ok
+  buyer = form.cleand_data['buyer']
+  seller = form.cleand_data['seller']
+  amount = form.cleand_data['amount']
+  deadline = form.cleand_data['deadline']
+  description = form.cleaned_data['description']
+  if (not w3.utils.isAddress(buyer)) or (not w3.utils.isAddress(seller)) or (amount < 0) or (deadline < contract.functions.minPeriodOfDeadline_().call()):
+    return
+  # vars are ok
+  now = int(time.time()) # unix epoch
+  deadline += now
+  new_contract_txn = contract.functions.newContract(buyer, seller, description, amount, deadline).buildTransaction({
+      'from': acct.address,
+      'nonce': w3.eth.getTransactionCount(acct.address),
+      'gasPrice': w3.eth.gas_price,
+      'chainId': chain_id
+    })
+  signed = w3.eth.account.sign_transaction(new_contract_txn, private_key)
+  tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
+  tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+  print('Transaction receipt for new contract method:')
+  pprint(dict(tx_receipt))
+  
+def process_contribute_contract(form, request):
+  id = form.cleaned_data['id']
+  amount = form.cleand_data['amount']
+  if amount < 0:
+    return
+  amount_in_wei = w3.toWei(amount, 'ether') 
+  new_contribution_txn = contract.functions.newPayment(id).buildTransaction({
+      'from': acct.address,
+      'value': amount_in_wei,
+      'nonce': w3.eth.getTransactionCount(acct.address),
+      'gasPrice': w3.eth.gas_price,
+      'chainId': chain_id
+    })
+  signed = w3.eth.account.sign_transaction(new_contribution_txn, private_key)
+  tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
+  tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+  print('Transaction receipt for new contract method:')
+  pprint(dict(tx_receipt))
+  
+def process_delete_contract(form, request):
+  id = form.cleaned_data['id']
+  new_delete_txn = contract.functions.deletedNotaryAct(id).buildTransaction({
+      'from': acct.address,
+      'nonce': w3.eth.getTransactionCount(acct.address),
+      'gasPrice': w3.eth.gas_price,
+      'chainId': chain_id
+    })
+  signed = w3.eth.account.sign_transaction(new_delete_txn, private_key)
+  tx_hash = w3.eth.send_raw_transaction(signed.rawTransaction)
+  tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
+  print('Transaction receipt for new contract method:')
+  pprint(dict(tx_receipt))
+
+def processForm(form, request):
+  type = form.cleaned_data["type"]
+  if type == 'new':
+    process_new_contract(form, request)
+  elif type == 'contribute':
+    process_contribute_contract(form, request)
+  elif type == 'delete':
+    process_delete_contract(form, request)
+  else:
+    messages.error(request, "Operation not allowed.")
+  return redirect("app:homepage")
+
+###############################################################
+
+def get_acts_from_contract():
+  acts = []
+  for i in range(contract.functions.numContract_().call()):
+    t = contract.functions.getTitleDeed(i).call()
+    acts.append(t)
+  return acts
+
+def get_events_from_contract():
+  for filter in filters:
+    for event in filter.get_new_entries():
+      # update records in db
+      record = Event.objects.filter(type=event['event']).first()
+      if record is not None:
+        record.times += 1
+        record.date = datetime.now()
+        record.save()
+  # db is updated, now retrieve info we need
+  output = []
+  for event in events:
+    record = Event.objects.filter(type=event).first()
+    output.append({'type':record.type, 'times':record.times, 'date':record.date})
+  return output
+
+###############################################################
+
 def homepage(request):
-  form = OrderForm()
+  form = NotaryForm()
   #if there is an incoming submitted form
   if request.method == "POST":
-    form = OrderForm(request.POST)
+    form = NotaryForm(request.POST)
     if form.is_valid():
-      processOrder(form, request)
+      processForm(form, request)
       return redirect('app:homepage')
-    
+  
+  list_of_contracts = get_acts_from_contract()
+  list_of_events = get_events_from_contract()
   context = {
-    "user": request.user,
-    # "open_orders": Order.objects.filter(profile=request.user, status="pending").order_by('datetime'),
-    # "closed_orders": Order.objects.filter(profile=request.user, status="executed").order_by('-datetime'),
-    "gas_price": w3.eth.gasPrice,
-    "block_number": w3.eth.blockNumber
-    # "profit": wallet.profit,
-    # "form": form
+    "list_of_contracts": list_of_contracts,
+    "list_of_events": list_of_events,
+    "form": form
   }
   return render(request=request, template_name='mainapp/home.html', context=context)
-
-
-
-#######################################################################################################################
-
-
-# import json
-# from web3 import Web3
-# from .render import Render
-# from .models import Rec_Model
-# from django.http import HttpResponseRedirect
-# from django.contrib import messages
-# from django.core.paginator import Paginator
-# from django.shortcuts import render,redirect,HttpResponse
-# from django.contrib.sessions.models import Session
-
-# url = 'https://ropsten.infura.io/v3/<PASTE YOUR API KEY HERE>'
-# web3 = Web3(Web3.HTTPProvider(url))
-
-# address = web3.toChecksumAddress("0x0231CE2f680d4986DE84E55f2a72cBade878B774")
-# abi = json.loads('''[...]''')
-	
-# contract = web3.eth.contract(address=address,abi=abi)
-
-# def connect(request):
-# 	return render(request,'main_app/index.html')
-
-# #CONNECTING TO SMART CONTRACT FOR POST,PAYMENTS etc
-# def get_posts_from_contract():
-# 	func_to_call = 'postCount'
-# 	contract_func = contract.functions[func_to_call]
-# 	postCount = contract_func().call()
-
-# 	posts=[]
-# 	for i in range(postCount):
-# 		p = contract.functions.posts(i+1).call()
-# 		posts.append(p)	
-# 	return posts
-
-
-# def append(request):
-# 	return render(request, 'main_app/submit.html')
-
-
-# #ACCESSING AND DISPLAY OF POSTS
-# def posts(request):
-	
-# 	posts = get_posts_from_contract()
-# 	# print(f'{posts}\n\n')
-
-# 	posts.sort(key = lambda x: x[2], reverse=True)
-
-# 	paginator = Paginator(posts,5)
-# 	page_number =  request.GET.get('page')
-# 	page_obj = paginator.get_page(page_number)
-
-# 	context={
-# 		'page':page_obj,
-# 		'posts':posts,
-# 		# 'author':account_address
-# 	}
-
-# 	return render(request,'main_app/posts.html',context)
-
-# def get_free_post(request,pid):
-# 	posts=[]
-# 	posts_list=get_posts_from_contract()
-# 	for p in posts_list:
-# 		if p[0] == pid:
-# 			if p[1] == False:
-# 				posts.append(p)
-# 	if len(posts)==0:
-# 		messages.warning(request,'THIS POST IS NOT FOR SALE')
-# 		return redirect('posts')
-
-# 	context={
-# 		'posts':posts[0],
-# 		'pid':pid
-# 	}
-# 	return render(request, 'main_app/get_post.html',context)
-			
-# def get_receipt(request,pid):
-# 	if request.method=='POST':
-# 		global receipt
-# 		receipt = request.POST.get('receipt')
-# 		check = Rec_Model.objects.filter(receipt=receipt).exists()
-# 		if check:
-# 			messages.warning(request,'THIS RECEIPT HAS BEEN USED EARLIER')
-# 			return redirect('receipt', pid=pid)
-# 		else:
-# 			if (receipt.startswith("0x") and len(receipt)==66):
-# 				rec=web3.eth.waitForTransactionReceipt(receipt)
-# 				rec=dict(rec)
-# 				status = rec["status"]
-# 				if status==1:
-# 					request.session['has_receipt']=True
-# 					rec = Rec_Model.objects.create(receipt=receipt)
-# 					if rec:
-# 						return redirect('get_post', pid=pid)
-# 				else:
-# 					messages.warning(request,'INVALID TRANSACTION RECEIPT')
-# 					return redirect('payment',pid=pid)
-# 			else:
-# 				messages.warning(request,'INVALID RECEIPT')
-# 				return redirect('receipt', pid=pid)
-			
-# 	return render(request, "main_app/receipt.html")
-
-# def get_post(request,pid):
-# 	if request.session.has_key('has_receipt'):
-# 		posts=[]
-# 		posts_list=get_posts_from_contract()
-# 		for p in posts_list:
-# 			if p[0] == pid:
-# 				posts.append(p)
-# 		print(posts[0][0])
-# 		context={
-# 			'posts':posts[0],
-# 			'pid':pid
-# 		}
-
-# 		return render(request, 'main_app/get_post.html',context)
-# 	else:
-# 		return redirect('receipt',pid=pid)
-
-
-
-# def payment(request, pid):
-# 	context ={
-# 		'pid':pid
-# 	}
-# 	return render(request, 'main_app/payment.html',context)
-
-
-# #DOWNLOADING THE CONTENT ON SYSTEM
-# def get_pdf(request,pid, *args, **kwargs):
-# 	posts=[]
-# 	posts_list=get_posts_from_contract()
-# 	for p in posts_list:
-# 		if p[0] == pid:
-# 			posts.append(p)
-# 	print(posts[0])
-# 	context={
-# 		'posts':posts[0]
-# 	}
-
-# 	return Render.render('main_app/get_post.html', context)
-
-# def buy_content(request):
-# 	posts = []
-# 	all_posts = get_posts_from_contract()
-# 	# print(f'{posts[1][1]}\n\n')
-# 	for post in all_posts:
-# 		if post[1]:
-# 			posts.append(post)
-
-# 	posts.sort(key = lambda x: x[2], reverse=True)
-# 	total = len(posts)
-
-# 	paginator = Paginator(posts,5)
-# 	page_number =  request.GET.get('page')
-# 	page_obj = paginator.get_page(page_number)
-
-# 	context={
-# 		'page':page_obj,
-# 		'posts':posts,
-# 		'total':total
-# 	}
-
-# 	return render(request,'main_app/buy_content.html',context)
-
-
