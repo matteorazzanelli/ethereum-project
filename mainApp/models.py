@@ -2,6 +2,8 @@
 from djongo import models
 
 from djongo.models.fields import ObjectIdField
+
+from django_ethereum.fields import EthereumAddressField
   
 class NotaryModelForm(models.Model):
   _id = ObjectIdField()
@@ -15,8 +17,8 @@ class NotaryModelForm(models.Model):
     ('closed', 'closed'),
   ]
   id = models.FloatField()
-  buyer = models.BinaryField(editable=True)
-  seller = models.BinaryField(editable=True)
+  buyer = EthereumAddressField()
+  seller = EthereumAddressField()
   description = models.CharField(max_length=500)
   amount = models.FloatField()
   deadline = models.IntegerField(editable=True)
