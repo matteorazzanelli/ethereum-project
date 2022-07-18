@@ -23,7 +23,7 @@ acct = w3.eth.account.privateKeyToAccount(private_key)
 # retrieve contract vars and create contract instance
 import json
 deployed_contract_address = '0x95fF4E2BB700118Bf2042686b1235E0762f8194c'
-compiled_contract_path = 'startup_token/build/contracts/NotaryContract.json'
+compiled_contract_path = 'startup_token/build/NotaryContract.json'
 with open(compiled_contract_path) as file:
   contract_json = json.load(file)  # load contract info as JSON
   contract_abi = contract_json['abi']  # fetch contract's abi - necessary to call its functions
@@ -61,12 +61,16 @@ from pprint import pprint
 
 def process_new_contract(form, request):
   # verify all params are ok
-  buyer = form.cleand_data['buyer']
-  seller = form.cleand_data['seller']
-  amount = form.cleand_data['amount']
-  deadline = form.cleand_data['deadline']
+  buyer = form.cleaned_data['buyer']
+  seller = form.cleaned_data['seller']
+  amount = int(form.cleaned_data['amount'])
+  deadline = form.cleaned_data['deadline']*7*24*3600
   description = form.cleaned_data['description']
-  if (not w3.utils.isAddress(buyer)) or (not w3.utils.isAddress(seller)) or (amount < 0) or (deadline < contract.functions.minPeriodOfDeadline_().call()):
+  if (not w3.isAddress(buyer)) or (not w3.isAddress(seller)) or (amount < 0) or (deadline < contract.functions.minPeriodOfDeadline_().call()):
+    print('buyer :', w3.isAddress(buyer))
+    print('seller :', w3.isAddress(seller))
+    print('amount :', amount)
+    print('deadline :', contract.functions.minPeriodOfDeadline_().call())
     return
   # vars are ok
   now = int(time.time()) # unix epoch
@@ -126,7 +130,7 @@ def processForm(form, request):
     process_delete_contract(form, request)
   else:
     messages.error(request, "Operation not allowed.")
-  return redirect("app:homepage")
+  return redirect("mainApp:homepage")
 
 ###############################################################
 
@@ -134,7 +138,8 @@ def get_acts_from_contract():
   acts = []
   for i in range(contract.functions.numContract_().call()):
     t = contract.functions.getTitleDeed(i).call()
-    acts.append(t)
+    acts.append({'id': i, 'buyer':t[0], 'seller':t[1], 'description':t[2],
+                 'amount': t[3], 'deadline':round((t[5]-time.time())/(7*24*3600))})
   return acts
 
 def get_events_from_contract():
@@ -162,7 +167,7 @@ def homepage(request):
     form = NotaryForm(request.POST)
     if form.is_valid():
       processForm(form, request)
-      return redirect('app:homepage')
+      return redirect('mainApp:homepage')
   
   list_of_contracts = get_acts_from_contract()
   list_of_events = get_events_from_contract()
