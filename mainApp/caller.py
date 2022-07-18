@@ -30,7 +30,7 @@ acct = w3.eth.account.privateKeyToAccount(private_key)
 # retrieve contract vars and create contract instance
 import json
 deployed_contract_address = '0x95fF4E2BB700118Bf2042686b1235E0762f8194c'
-compiled_contract_path = '../startup_token/build/contracts/NotaryCOntract.json'
+compiled_contract_path = '../startup_token/build/NotaryContract.json'
 with open(compiled_contract_path) as file:
   contract_json = json.load(file)  # load contract info as JSON
   contract_abi = contract_json['abi']  # fetch contract's abi - necessary to call its functions
