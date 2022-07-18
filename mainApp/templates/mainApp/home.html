@@ -1,17 +1,86 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Django Girls blog</title>
-    </head>
-    <body>
-        <header>
-            <h1><a href="/">Django Girls Blog</a></h1>
-        </header>
+{% extends 'mainApp/header.html' %}
 
-        <article>
-            <time>published: 14.06.2014, 12:14</time>
-            <h2><a href="">Checking blockchain status</a></h2>
-            <p>The curent estimated gas price in WEI is {{gas_price}} at block number {{block_number}}.</p>
-        </article>
-    </body>
-</html>
+  {% block content %}
+
+  <!--Navbar-->
+  {% comment %} <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" href="#">Navbar</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="False" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarText">
+      <ul class="navbar-nav mr-auto">
+        {% if user.is_authenticated %}
+        
+        <li class="nav-item">
+          <a class="nav-link" href="/logout">Logout</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="#">Welcome, {{user.username}}</a>
+        </li>
+
+        {% else %}
+
+        <li class="nav-item">
+          <a class="nav-link" href="/login">Login</a>
+        </li>
+
+        {% endif %}
+      </ul>
+    </div>
+  </nav> {% endcomment %}
+
+
+  <h1>Instruction</h1>
+  <p> Type is the first checked variable </p>
+  {% comment %} <p> BTC balance : {{btc_balance}} </p>
+  <p> USD balance : {{usd_balance}} </p>
+  <p> Profit : {{profit}} </p> {% endcomment %}
+
+  <h2>New order</h2>
+  <form method="POST" class="post-form">{% csrf_token %}
+      {{ form.as_p }}
+      <button type="submit" class="btn btn-primary">Send request</button>
+  </form>
+
+  <h2>OPEN/CLOSED CONTRACTS</h2>
+  <table class="table p-4 bg-white shadow rounded-lg">
+    <thead>
+      <tr>
+        <th class="border-b-2 p-4 dark:border-dark-5 whitespace-nowrap font-normal text-blue-600"> ID </th>
+        <th class="border-b-2 p-4 dark:border-dark-5 whitespace-nowrap font-normal text-blue-600"> Buyer </th>
+        <th class="border-b-2 p-4 dark:border-dark-5 whitespace-nowrap font-normal text-blue-600"> Seller </th>
+        <th class="border-b-2 p-4 dark:border-dark-5 whitespace-nowrap font-normal text-blue-600"> Description </th>
+        <th class="border-b-2 p-4 dark:border-dark-5 whitespace-nowrap font-normal text-blue-600"> Amount </th>
+        <th class="border-b-2 p-4 dark:border-dark-5 whitespace-nowrap font-normal text-blue-600"> Deadline (in weeks) </th>
+      </tr>
+    </thead>
+    <tbody> {% for order in list_of_contracts %} <tr class="text-gray-700">
+        <td class="border-b-2 p-4 dark:border-dark-5"> {{order.id}} </td>
+        <td class="border-b-2 p-4 dark:border-dark-5"> {{order.buyer}} </td>
+        <td class="border-b-2 p-4 dark:border-dark-5"> {{order.seller}} </td>
+        <td class="border-b-2 p-4 dark:border-dark-5"> {{order.description}} </td>
+        <td class="border-b-2 p-4 dark:border-dark-5"> {{order.amount}} </td>
+        <td class="border-b-2 p-4 dark:border-dark-5"> {{order.deadline}} </td>
+      </tr> {% endfor %} </tbody>
+  </table>
+
+  <h2>EVENTS</h2>
+  <table class="table p-4 bg-white shadow rounded-lg">
+    <thead>
+      <tr>
+        <th class="border-b-2 p-4 dark:border-dark-5 whitespace-nowrap font-normal text-blue-600"> # </th>
+        <th class="border-b-2 p-4 dark:border-dark-5 whitespace-nowrap font-normal text-blue-600"> Type </th>
+        <th class="border-b-2 p-4 dark:border-dark-5 whitespace-nowrap font-normal text-blue-600"> Times </th>
+        <th class="border-b-2 p-4 dark:border-dark-5 whitespace-nowrap font-normal text-blue-600"> Last </th>
+      </tr>
+    </thead>
+    <tbody> {% for order in list_of_events %} <tr class="text-gray-700">
+        <td class="border-b-2 p-4 dark:border-dark-5"> {{forloop.counter}} </td>
+        <td class="border-b-2 p-4 dark:border-dark-5"> {{order.type}} </td>
+        <td class="border-b-2 p-4 dark:border-dark-5"> {{order.times}} </td>
+        <td class="border-b-2 p-4 dark:border-dark-5"> {{order.date}} </td>
+      </tr> {% endfor %} </tbody>
+  </table>
+
+  {% endblock %}
