@@ -16,12 +16,13 @@ class NotaryModelForm(models.Model):
     ('pending', 'pending'),
     ('closed', 'closed'),
   ]
-  id = models.FloatField()
-  buyer = EthereumAddressField()
-  seller = EthereumAddressField()
-  description = models.CharField(max_length=500)
-  amount = models.FloatField()
-  deadline = models.IntegerField(editable=True)
+  id = models.FloatField(blank=True, default=0)
+  buyer = EthereumAddressField(blank=True, default='0x0000000000000000000000000000000000000000')
+  seller = EthereumAddressField(blank=True, default='0x0000000000000000000000000000000000000000')
+  description = models.CharField(blank=True, max_length=500, default=' ')
+  amount = models.FloatField(blank=True, default=0)
+  amount_for_now = models.FloatField()
+  deadline = models.IntegerField(blank=True, default=2)
   
   status = models.CharField(max_length=50, choices=STATUS, default='pending')
   type = models.CharField(max_length=50, choices=TYPE)

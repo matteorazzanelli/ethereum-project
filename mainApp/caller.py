@@ -29,7 +29,7 @@ acct = w3.eth.account.privateKeyToAccount(private_key)
 
 # retrieve contract vars and create contract instance
 import json
-deployed_contract_address = '0x95fF4E2BB700118Bf2042686b1235E0762f8194c'
+deployed_contract_address = '0x4E04C5726059B0DB3A9Be3619E4BC1524D63215a'
 compiled_contract_path = '../startup_token/build/NotaryContract.json'
 with open(compiled_contract_path) as file:
   contract_json = json.load(file)  # load contract info as JSON
@@ -47,10 +47,10 @@ import time
 now = int(time.time()) # unix epoch
 deadline = now + 14*24*3600 # 2 weeks
 new_contract_txn = contract.functions.newContract(
-  "0xc85e78A5CBdE92ae1B9848AB1B3D6C0EBbb88187",
-  "0x2a61c6f70c84eAd46b054746C1B7C7aAA12269cd",
+  "0xF1D4426Ee2Fec8C6714E1c717684bC7660701B35",
+  "0xF15a4bF822fd0ae545E17e40DfAF4c3A9CA68906",
   "The first contract",
-  100,
+  1,
   deadline
   ).buildTransaction({
     'from': acct.address,

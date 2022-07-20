@@ -22,7 +22,7 @@ acct = w3.eth.account.privateKeyToAccount(private_key)
 
 # retrieve contract vars and create contract instance
 import json
-deployed_contract_address = '0x95fF4E2BB700118Bf2042686b1235E0762f8194c'
+deployed_contract_address = '0x4E04C5726059B0DB3A9Be3619E4BC1524D63215a'
 compiled_contract_path = 'startup_token/build/NotaryContract.json'
 with open(compiled_contract_path) as file:
   contract_json = json.load(file)  # load contract info as JSON
@@ -34,7 +34,7 @@ contract = w3.eth.contract(address=deployed_contract_address, abi=contract_abi)
 #######################################################################################################################
 ################################# Create MongoDB initial setup
 
-from .models import Event
+from .models import Event, NotaryModelForm
 
 # create mongodb records for each event
 events = ['NewContractCreated', 'NewContribution', 'GoalReached', 'ActFailed']
@@ -63,18 +63,15 @@ def process_new_contract(form, request):
   # verify all params are ok
   buyer = form.cleaned_data['buyer']
   seller = form.cleaned_data['seller']
-  amount = int(form.cleaned_data['amount'])
+  amount = Web3.toWei(form.cleaned_data['amount'], 'ether')
   deadline = form.cleaned_data['deadline']*7*24*3600
   description = form.cleaned_data['description']
-  if (not w3.isAddress(buyer)) or (not w3.isAddress(seller)) or (amount < 0) or (deadline < contract.functions.minPeriodOfDeadline_().call()):
-    print('buyer :', w3.isAddress(buyer))
-    print('seller :', w3.isAddress(seller))
-    print('amount :', amount)
-    print('deadline :', contract.functions.minPeriodOfDeadline_().call())
+  if (not w3.isAddress(buyer)) or (not w3.isAddress(seller)) or (amount <= 0) or (deadline < contract.functions.minPeriodOfDeadline_().call()+1):
     return
   # vars are ok
   now = int(time.time()) # unix epoch
   deadline += now
+  print(acct.address, w3.eth.get_balance(acct.address))
   new_contract_txn = contract.functions.newContract(buyer, seller, description, amount, deadline).buildTransaction({
       'from': acct.address,
       'nonce': w3.eth.getTransactionCount(acct.address),
@@ -88,14 +85,16 @@ def process_new_contract(form, request):
   pprint(dict(tx_receipt))
   
 def process_contribute_contract(form, request):
-  id = form.cleaned_data['id']
-  amount = form.cleand_data['amount']
-  if amount < 0:
+  id = int(form.cleaned_data['id'])
+  amount = Web3.toWei(form.cleaned_data['amount'], 'ether')
+  t = contract.functions.getTitleDeed(id).call()
+  print(id, amount, t)
+  if (amount <= 0) or (t[6] is True): 
+    print('Amount should be greater than 0 or contract already closed')
     return
-  amount_in_wei = w3.toWei(amount, 'ether') 
   new_contribution_txn = contract.functions.newPayment(id).buildTransaction({
       'from': acct.address,
-      'value': amount_in_wei,
+      'value': amount,
       'nonce': w3.eth.getTransactionCount(acct.address),
       'gasPrice': w3.eth.gas_price,
       'chainId': chain_id
@@ -105,9 +104,14 @@ def process_contribute_contract(form, request):
   tx_receipt = w3.eth.wait_for_transaction_receipt(tx_hash)
   print('Transaction receipt for new contract method:')
   pprint(dict(tx_receipt))
+      
   
 def process_delete_contract(form, request):
-  id = form.cleaned_data['id']
+  id = int(form.cleaned_data['id'])
+  t = contract.functions.getTitleDeed(id).call()
+  if t[6] is True:
+    print('Contract already completeed or archived')
+    return
   new_delete_txn = contract.functions.deletedNotaryAct(id).buildTransaction({
       'from': acct.address,
       'nonce': w3.eth.getTransactionCount(acct.address),
@@ -136,10 +140,19 @@ def processForm(form, request):
 
 def get_acts_from_contract():
   acts = []
-  for i in range(contract.functions.numContract_().call()):
+  # check if contract has been completed, and eventually make its status to 'closed'
+  # closed contracts are not shown
+  num_of_contracts = contract.functions.numContract_().call()
+  for i in range(num_of_contracts):
     t = contract.functions.getTitleDeed(i).call()
-    acts.append({'id': i, 'buyer':t[0], 'seller':t[1], 'description':t[2],
-                 'amount': t[3], 'deadline':round((t[5]-time.time())/(7*24*3600))})
+    if t[6] is True:
+      record = NotaryModelForm.objects.filter(id=i).first()
+      if record is not None:
+        record.status = 'closed' # todo: this is redundant for already closed contracts
+    else:
+      acts.append({'id': i, 'buyer':t[0], 'seller':t[1], 'description':t[2],
+                 'amount': t[3], 'amount_for_now': t[4],
+                 'deadline':round((t[5]-time.time())/(7*24*3600))})
   return acts
 
 def get_events_from_contract():

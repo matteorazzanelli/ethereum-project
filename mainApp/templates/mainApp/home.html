@@ -2,42 +2,15 @@
 
   {% block content %}
 
-  <!--Navbar-->
-  {% comment %} <nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" href="#">Navbar</a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarText" aria-controls="navbarText" aria-expanded="False" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarText">
-      <ul class="navbar-nav mr-auto">
-        {% if user.is_authenticated %}
-        
-        <li class="nav-item">
-          <a class="nav-link" href="/logout">Logout</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="#">Welcome, {{user.username}}</a>
-        </li>
-
-        {% else %}
-
-        <li class="nav-item">
-          <a class="nav-link" href="/login">Login</a>
-        </li>
-
-        {% endif %}
-      </ul>
-    </div>
-  </nav> {% endcomment %}
-
-
-  <h1>Instruction</h1>
-  <p> Type is the first checked variable </p>
-  {% comment %} <p> BTC balance : {{btc_balance}} </p>
-  <p> USD balance : {{usd_balance}} </p>
-  <p> Profit : {{profit}} </p> {% endcomment %}
-
-  <h2>New order</h2>
+  <h1>Instructions</h1>
+  <ul>
+    <li>Type is the first checked variable</li>
+    <li>Amount is in ETH</li>
+    <li>Minimum amount is 0 ETH</li>
+    <li>Deadline is in weeks</li>
+    <li>Minimum deadline is 2 weeks</li>
+    <li>Buyer and Seller must be valid addresses (starting with 0x...)</li>
+  </ul>
   <form method="POST" class="post-form">{% csrf_token %}
       {{ form.as_p }}
       <button type="submit" class="btn btn-primary">Send request</button>
@@ -52,6 +25,7 @@
         <th class="border-b-2 p-4 dark:border-dark-5 whitespace-nowrap font-normal text-blue-600"> Seller </th>
         <th class="border-b-2 p-4 dark:border-dark-5 whitespace-nowrap font-normal text-blue-600"> Description </th>
         <th class="border-b-2 p-4 dark:border-dark-5 whitespace-nowrap font-normal text-blue-600"> Amount </th>
+        <th class="border-b-2 p-4 dark:border-dark-5 whitespace-nowrap font-normal text-blue-600"> For now </th>
         <th class="border-b-2 p-4 dark:border-dark-5 whitespace-nowrap font-normal text-blue-600"> Deadline (in weeks) </th>
       </tr>
     </thead>
@@ -61,6 +35,7 @@
         <td class="border-b-2 p-4 dark:border-dark-5"> {{order.seller}} </td>
         <td class="border-b-2 p-4 dark:border-dark-5"> {{order.description}} </td>
         <td class="border-b-2 p-4 dark:border-dark-5"> {{order.amount}} </td>
+        <td class="border-b-2 p-4 dark:border-dark-5"> {{order.amount_for_now}} </td>
         <td class="border-b-2 p-4 dark:border-dark-5"> {{order.deadline}} </td>
       </tr> {% endfor %} </tbody>
   </table>

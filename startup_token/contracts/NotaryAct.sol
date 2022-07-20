@@ -168,6 +168,8 @@ contract NotaryContract is NotaryToken {
     require(address(this).balance >= amountFunded,"Insufficient balance in faucet for withdrawal request");
     acts_[actID].buyer.transfer(amountFunded); // this transfers to buyer.balance NOT token
 
+    acts_[actID].completed = true;
+
     emit ActFailed(actID, block.timestamp, amountFunded);
   }
 
