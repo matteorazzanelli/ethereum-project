@@ -22,6 +22,43 @@
 * [Redis](https://redis.io/)
 * [Web3.py](https://web3py.readthedocs.io/en/stable/)
 
-installa e apri ganache
-installa e apri mongod
-fai deploy del contratto
+## Getting Started
+1. Clone the repo
+  ```sh
+  git clone https://github.com/matteorazzanelli/ethereum-project.git
+  ```
+2. Install external packages using requirements.txt file
+  ```sh
+  pip install -r /path/to/requirements.txt
+  ```
+3. Open Ganache and instantiate a workspace
+4. Open a shell and run mongodb server
+  ```sh
+  .\path\to\mongodexe\mongod.exe --dbpath C:\path\to\db
+  ```
+5. Create a .env file in your workspace and set your private key (for deploying and retrieving contract)
+  ```sh
+  PRIVATE_KEY_GANACHE=<YOUR-PRIVATE-KEY>
+  ```
+6. Open a shell and go to your smart contract folder (deploy the contract on your local blockchain, see truffle-config.js for details)
+  ```sh
+  truffle compile
+  ```
+  ```sh
+  truffle test
+  ```
+  ```sh
+  truffle deploy --network development
+  ```
+7. Copy the resulting smart contract address and copy and paste it in the views.py file (line 25)
+8. Open a shell and run the website (go where the manage.py file is)
+  ```sh
+  python manage.py makemigrations
+  ```
+  ```sh
+  python manage.py migrate
+  ```
+  ```sh
+  python manage.py runserver
+  ```
+8. Go to http://127.0.0.1:8000/
