@@ -1,7 +1,8 @@
 {% extends 'mainApp/header.html' %}
 
   {% block content %}
-
+  
+  
   <h1>Instructions</h1>
   <ul>
     <li>Type is the first checked variable</li>
@@ -13,7 +14,19 @@
   </ul>
   <form method="POST" class="post-form">{% csrf_token %}
       {{ form.as_p }}
-      <button type="submit" class="btn btn-primary">Send request</button>
+      <button type="submit" class="enableMetamaskButton">Send request</button>
+      <script type="text/javascript">
+        const metamaskButton = document.querySelector('.enableMetamaskButton');
+    
+        metamaskButton.addEventListener('click', () => {
+          getAccount();
+        });
+    
+        async function getAccount() {
+          const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+          const account = accounts[0];
+        }
+      </script>
   </form>
 
   <h2>OPEN CONTRACTS</h2>
@@ -57,5 +70,7 @@
         <td class="border-b-2 p-4 dark:border-dark-5"> {{order.date}} </td>
       </tr> {% endfor %} </tbody>
   </table>
+
+  
 
   {% endblock %}
