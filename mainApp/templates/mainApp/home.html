@@ -14,8 +14,9 @@
   </ul>
   <form method="POST" class="post-form">{% csrf_token %}
       {{ form.as_p }}
-      <button type="submit" class="enableMetamaskButton">Send request</button>
-      <script type="text/javascript">
+      {% comment %} <button id="connectButton" onClick="" class="w3-button w3-black">Connect to MetaMask</button> {% endcomment %}
+      <button type="submit" id="sendRequestButton" class="enableMetamaskButton">Send request</button>
+      {% comment %} <script type="text/javascript">
         const metamaskButton = document.querySelector('.enableMetamaskButton');
     
         metamaskButton.addEventListener('click', () => {
@@ -26,7 +27,7 @@
           const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
           const account = accounts[0];
         }
-      </script>
+      </script> {% endcomment %}
   </form>
 
   <h2>OPEN CONTRACTS</h2>
