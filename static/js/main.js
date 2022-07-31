@@ -9,16 +9,11 @@ window.addEventListener('DOMContentLoaded', () => {
     console.log('MetaMask is installed!');
     // Enbale connection
     ethereum.request({ method: 'eth_requestAccounts' }).then(changeAccount);
-    if(currentAccount !== null){
-      sendRequestButton.disabled = false;
-      document.querySelector('.enableMetamaskButton').disabled = false;
-      alert('Connected with ', currentAccount.currentAccount);
+    if(currentAccount === null){
+      sendRequestButton.disabled = true;
+      alert('Waiting...');
     }
-    else{
-      document.getElementById('sendRequestButton').disabled = true;
-      alert('Nooooooooooooooooooooooo');
-    }
-    
+    // TODO: catch MetaMask disconnection to reload page
   }
   else {
     console.error('MetaMask is not installed');
@@ -38,16 +33,18 @@ function changeAccount(accounts) {
   } else {
     // Set current account
     currentAccount = accounts[0];
+    console.log(currentAccount);
+    sendRequestButton.disabled = false;
     // write on json
-    const dict_values = {currentAccount};
-    const s = JSON.stringify(dict_values);
-    console.log(s);
-    window.alert(s);
-    $.ajax({
-      url:"/test",
-      type:"POST",
-      contentType: "application/json",
-      data: JSON.stringify(s)
-    });
+    // const dict_values = {currentAccount};
+    // const s = JSON.stringify(dict_values);
+    // console.log(s);
+    // window.alert(s);
+    // $.ajax({
+    //   url:"/test",
+    //   type:"POST",
+    //   contentType: "application/json",
+    //   data: JSON.stringify(s)
+    // });
   }
 }
